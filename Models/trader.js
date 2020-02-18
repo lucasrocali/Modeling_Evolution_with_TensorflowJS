@@ -5,7 +5,10 @@ class Trader {
 	 */
 	constructor(params) {
 		this.id = params.id;
-        this.currentDecision = 0
+        this.lastOperation = 'neutral' //buy, sell
+        this.balanceBRL = 100000
+        this.balanceTicker = 0
+        this.balanceTotal = 0
 		this.score = 0;
 		this.fitness = 0;
 		this.parents = [];
@@ -28,9 +31,9 @@ class Trader {
 	}
 
 	show(i,tvalue) {
-        if (this.currentDecision < 0.4) {
+        if (this.lastOperation == 'buy') {
             fill('green');
-        } else if (this.currentDecision < 0.6) {
+        } else if (this.lastOperation == 'sell') {
             fill('red');
         } else {
             fill('gray');
@@ -43,22 +46,36 @@ class Trader {
 	}
 
 	adjust_score() {
-		let score = 0// this.upper_left_leg.position.x ;
-		this.score = score > 0 ? score : 0.001;
+		this.score = this.balanceTotal
 	}
 
 	think(counter,currentValue) {
         const spread = ((currentValue.close - currentValue.open) / currentValue.open)*100
-       
-		// let ground = boundary.ground;
-		// let distance_from_ground = ground.position.y - ((this.upper_left_leg.position.y + this.upper_right_leg.position.y + this.lower_right_leg.position.y + this.lower_left_leg.position.y) / 4)
-		// let torque = this.upper_left_leg.angularVelocity + this.upper_right_leg.angularVelocity + this.lower_right_leg.angularVelocity + this.lower_left_leg.angularVelocity;
-		// let vx = this.upper_left_leg.velocity.x + this.upper_right_leg.velocity.x + this.lower_right_leg.velocity.x + this.lower_left_leg.velocity.x;
-		// let vy = this.upper_left_leg.velocity.y + this.upper_right_leg.velocity.y + this.lower_right_leg.velocity.y + this.lower_left_leg.velocity.y;
-		let input = [spread];
+        const currentPrice = currentValue.close
+
+        let input = [spread];
 
         let result = this.brain.predict(input);
-        this.currentDecision = result[0]
+        const currentDecision = result[0]
+
+        const canBuy = this.balanceBRL - 100*currentPrice > 0
+        const canSell = this.balanceTicker - 100 > 0
+
+        if (currentDecision < 0.4 && canBuy) {
+            this.lastOperation = 'buy'
+            this.balanceBRL = this.balanceBRL - 100*currentPrice
+            this.balanceTicker = this.balanceTicker + 100
+
+        } else if (currentDecision < 0.6 && canSell) {
+            this.lastOperation = 'sell'
+            this.balanceBRL = this.balanceBRL + 100*currentPrice
+            this.balanceTicker = this.balanceTicker - 100
+
+        } else {
+            this.lastOperation = 'neutral'
+        }
+
+        this.balanceTotal = this.balanceBRL + this.balanceTicker*currentPrice
         // console.log('think', spread, result)
 	}
 
@@ -71,8 +88,8 @@ class Trader {
 	}
 
 	kill(world) {
-		Matter.World.remove(world, [this.upper_right_leg, this.upper_left_leg, this.lower_left_leg, this.lower_right_leg,
-		this.left_joint, this.right_joint, this.main_joint, this.main_muscle, this.left_muscle, this.right_muscle]);
+		// Matter.World.remove(world, [this.upper_right_leg, this.upper_left_leg, this.lower_left_leg, this.lower_right_leg,
+		// this.left_joint, this.right_joint, this.main_joint, this.main_muscle, this.left_muscle, this.right_muscle]);
 
 		// Dispose its brain
 		this.brain.dispose();

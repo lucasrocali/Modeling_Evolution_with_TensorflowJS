@@ -5,7 +5,6 @@ let creatures = []
 const Render = Matter.Render
 const engine = Matter.Engine.create();
 const world = engine.world;
-const generationPeriod = 20;
 let generation = new Generation(12);
 let settled = false;
 
@@ -43,50 +42,57 @@ function setup() {
 	// }, generationPeriod * 1000);
 }
 
+const frame = 2
+
 let counter = 1;
 function draw() {
-	if (counter > 198) {
+	counter++;
+	let i = counter / frame
+	if (counter % frame != 0 ) {
+		return 
+	}
+	if (counter > 198 * frame) {
 		counter = 0;
 		settled = true;
+		generation.evolve();
 	}
-	counter++;
 	background(color(15, 15, 19));
 
 	// Display Boundary
-	boundary.display(tickerHistory,counter);
+	boundary.display(tickerHistory,i);
 
 	// Display Creatures
-	const currentValue = tickerHistory[counter]
+	const currentValue = tickerHistory[i]
 	generation.species.forEach((creature) => {
-		if (counter % 4 === 0) {
-			creature.think(counter,currentValue);
-		}
-		creature.show(counter,currentValue);
+		// if (i % 4 === 0) {
+			creature.think(i,currentValue);
+		// }
+		creature.show(i,currentValue);
 		creature.adjust_score();
 	});
 
 	// Display Stats
 	textSize(18)
 	fill("red");
-	text("Counter: " +counter, 40, 190);
+
 	text("Generation: " + generation.generation, 40, 50);
 	text("HighScore: " + generation.high_score.toFixed(2), 40, 70);
 	text("Average Score " + generation.avg_score.toFixed(2), 40, 90);
 	text("Population: " + generation.population, 40, 110);
-	text("Generation Period: " + generationPeriod + " seconds", 40, 130);
-	text("Mutation Rate: " + 5 + "%", 40, 150);
-	text("Progress: " + generation.progress.toFixed(2), 40, 170);
-	
+	text("Mutation Rate: " + 5 + "%", 40, 130);
+	text("Counter: " +i, 40, 150);
+	text("Frame rate: " +frame, 40, 170);
 	// Display Inheritance
 	textSize(14);
 	fill('green');
-	text("Creature\tParentA\t\tParentB", width * 0.78, 40)
+	text("Creature\t\tBRL\t\tTICKER\t\tTOTAL", width * 0.78, 40)
 	generation.species.forEach((creature, index) => {
-		let txt = '';
-		if (creature.parents.length !== 0)
-			txt = `${creature.id} \t\t\t ${creature.parents[0].id} (${creature.parents[0].score.toFixed(0)}) \t\t\t ${creature.parents[1].id}(${creature.parents[1].score.toFixed(0)})`;
-		else
-			txt = `${creature.id} \t\t\t ------ \t\t\t ------`
+		let txt = `${creature.id} \t\t\t ${creature.balanceBRL} \t\t\t ${creature.balanceTicker} \t\t\t ${creature.balanceTotal}`
+
+		// if (creature.parents.length !== 0)
+		// 	txt = `${creature.id} \t\t\t ${creature.parents[0].id} (${creature.parents[0].score.toFixed(0)}) \t\t\t ${creature.parents[1].id}(${creature.parents[1].score.toFixed(0)})`;
+		// else
+		// 	txt = `${creature.id} \t\t\t ------ \t\t\t ------`
 		text(txt, width * 0.80, 60 + (15 * index));
 	})
 
