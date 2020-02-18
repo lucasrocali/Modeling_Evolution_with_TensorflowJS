@@ -99,7 +99,7 @@ class Generation {
         // Add new children to the current generation
         this.species = new_generation;
         for (let i = 0; i < this.population; i++) {
-            this.species[i].add_to_world(world);
+            // this.species[i].add_to_world(world);
         }
     }
 }

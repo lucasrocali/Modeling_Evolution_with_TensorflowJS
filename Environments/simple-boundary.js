@@ -41,14 +41,20 @@ class SimpleBoundary {
      * Adds the current boundary to MatterJS World
      */
     add_to_world() {
-        Matter.World.add(world, [this.ground, this.roof, this.left_wall, this.right_wall]);
+        // Matter.World.add(world, [this.ground, this.roof, this.left_wall, this.right_wall]);
     }
 
-    display() {
+    display(tickerHistory = [],max = 200) {
         fill(color(118, 240, 155))
-        rect(this.ground.position.x, this.ground.position.y, width, 50);
-        rect(this.left_wall.position.x, this.left_wall.position.y, 20, height);
-        rect(this.right_wall.position.x, this.right_wall.position.y, 20, height);
-        rect(this.roof.position.x, this.roof.position.y, width, 20);
+        // rect(this.ground.position.x, this.ground.position.y, width, 20);
+        // rect(this.left_wall.position.x, this.left_wall.position.y, 20, height);
+        // rect(this.right_wall.position.x, this.right_wall.position.y, 20, height);
+        let i;
+        for(i=0; i < max; i++) {
+            const tvalue = tickerHistory[i];
+            fill(tvalue.close > tvalue.open ? color(118, 240, 155) : color(200, 12,12))
+            rect(60 +i*4,(height + 200) - tvalue.close * 10, 2, tvalue.high * 10 - tvalue.low * 10);
+            rect(60 +i*4,(height + 200) - tvalue.close * 10, 4, tvalue.close * 10 - tvalue.open * 10);
+        }
     }
 }
