@@ -5,7 +5,7 @@ let creatures = []
 const Render = Matter.Render
 const engine = Matter.Engine.create();
 const world = engine.world;
-let generation = new Generation(12);
+let generation = new Generation(20);
 let settled = false;
 
 console.log('handleByTicker')
@@ -42,60 +42,80 @@ function setup() {
 	// }, generationPeriod * 1000);
 }
 
-const frame = 2
+let frame = 1
 
 let counter = 1;
+const mvperiods = 7
+let mvavg = []
 function draw() {
-	counter++;
-	let i = counter / frame
-	if (counter % frame != 0 ) {
-		return 
+	try {
+		counter++;
+		let i = counter / frame
+		if (counter % frame != 0 ) {
+			return 
+		}
+		if (counter > 198 * frame) {
+			counter = 0;
+			settled = true;
+			generation.evolve();
+			// generation.generation > 30 ? frame = 40  : frame = frame
+		}
+		background(color(15, 15, 19));
+
+		// Display Boundary
+		const currentValue = tickerHistory[i]
+		let currentMavgValue =  currentValue.close
+		if (i > mvperiods) {
+			const lastn = tickerHistory.slice(i-mvperiods, i);
+			const sum = lastn.reduce((a, b) => a + b.close, 0) 
+			currentMavgValue = (sum/ mvperiods);
+			mvavg[i] = currentMavgValue;
+		} 
+		boundary.display(tickerHistory,i,mvavg);
+
+		// Display Creatures
+		
+
+		generation.species.forEach((creature) => {
+			// if (i % 4 === 0) {
+				creature.think(i,currentValue,currentMavgValue);
+			// }
+			creature.show(i,currentValue);
+			creature.adjust_score();
+		});
+
+		// Display Stats
+		textSize(18)
+		fill("red");
+
+		text("Generation: " + generation.generation, 40, 50);
+		text("HighScore: " + generation.high_score.toFixed(2), 40, 70);
+		text("Average Score " + generation.avg_score.toFixed(2), 40, 90);
+		text("Population: " + generation.population, 40, 110);
+		text("Mutation Rate: " + 5 + "%", 40, 130);
+		text("Counter: " + i, 40, 150);
+		text("Date: " + currentValue.datetime, 40, 170);
+		text("Frame rate: " + frame, 40, 190);
+		text("Moving Avg periods: " + mvperiods, 40, 210);
+		text("Close: " + currentValue.close, 40, 230);
+		text("Mavg value: " + currentMavgValue.toFixed(2), 40, 250);
+		// Display Inheritance
+		textSize(14);
+		fill('green');
+		text("Creature\t\tBRL\t\tTICKER\t\tSCORE", width * 0.78, 40)
+		generation.species.forEach((creature, index) => {
+			let txt = `${creature.id} \t\t\t ${creature.balanceBRL} \t\t\t ${creature.balanceTicker} \t\t\t ${creature.score}`
+
+			// if (creature.parents.length !== 0)
+			// 	txt = `${creature.id} \t\t\t ${creature.parents[0].id} (${creature.parents[0].score.toFixed(0)}) \t\t\t ${creature.parents[1].id}(${creature.parents[1].score.toFixed(0)})`;
+			// else
+			// 	txt = `${creature.id} \t\t\t ------ \t\t\t ------`
+			text(txt, width * 0.80, 60 + (15 * index));
+		})
+
+		// Run Matter-JS Engine
+		Matter.Engine.update(engine);
+	} catch (e) {
+		console.log(e)
 	}
-	if (counter > 198 * frame) {
-		counter = 0;
-		settled = true;
-		generation.evolve();
-	}
-	background(color(15, 15, 19));
-
-	// Display Boundary
-	boundary.display(tickerHistory,i);
-
-	// Display Creatures
-	const currentValue = tickerHistory[i]
-	generation.species.forEach((creature) => {
-		// if (i % 4 === 0) {
-			creature.think(i,currentValue);
-		// }
-		creature.show(i,currentValue);
-		creature.adjust_score();
-	});
-
-	// Display Stats
-	textSize(18)
-	fill("red");
-
-	text("Generation: " + generation.generation, 40, 50);
-	text("HighScore: " + generation.high_score.toFixed(2), 40, 70);
-	text("Average Score " + generation.avg_score.toFixed(2), 40, 90);
-	text("Population: " + generation.population, 40, 110);
-	text("Mutation Rate: " + 5 + "%", 40, 130);
-	text("Counter: " +i, 40, 150);
-	text("Frame rate: " +frame, 40, 170);
-	// Display Inheritance
-	textSize(14);
-	fill('green');
-	text("Creature\t\tBRL\t\tTICKER\t\tTOTAL", width * 0.78, 40)
-	generation.species.forEach((creature, index) => {
-		let txt = `${creature.id} \t\t\t ${creature.balanceBRL} \t\t\t ${creature.balanceTicker} \t\t\t ${creature.balanceTotal}`
-
-		// if (creature.parents.length !== 0)
-		// 	txt = `${creature.id} \t\t\t ${creature.parents[0].id} (${creature.parents[0].score.toFixed(0)}) \t\t\t ${creature.parents[1].id}(${creature.parents[1].score.toFixed(0)})`;
-		// else
-		// 	txt = `${creature.id} \t\t\t ------ \t\t\t ------`
-		text(txt, width * 0.80, 60 + (15 * index));
-	})
-
-	// Run Matter-JS Engine
-	Matter.Engine.update(engine);
 }

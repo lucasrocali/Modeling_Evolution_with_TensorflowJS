@@ -57,49 +57,51 @@ class Generation {
     }
 
     evolve() {
+        try {
+            // Store High Score
+            this.generation += 1;
+            let gen_highscore = Math.max.apply(Math, this.species.map(o => o.score));
+            this.high_score = gen_highscore > this.high_score ? gen_highscore : this.high_score;
 
-        // Store High Score
-        this.generation += 1;
-        let gen_highscore = Math.max.apply(Math, this.species.map(o => o.score));
-        this.high_score = gen_highscore > this.high_score ? gen_highscore : this.high_score;
+            // Calculate Total Score of this Generation
+            let total_score = 0;
+            this.species.forEach((creature) => { 
+                total_score += creature.score 
+            });
 
-        // Calculate Total Score of this Generation
-        let total_score = 0;
-        this.species.forEach((creature) => { total_score += creature.score });
+            // Assign Fitness to each creature
+            this.progress = (total_score / this.population) - this.avg_score
+            this.avg_score = total_score / this.population;
+            for (let i = 0; i < this.population; i++) {
+                this.species[i].fitness = this.species[i].score / total_score;
+            };
 
-        // Assign Fitness to each creature
-        this.progress = (total_score / this.population) - this.avg_score
-        this.avg_score = total_score / this.population;
-        for (let i = 0; i < this.population; i++) {
-            this.species[i].fitness = this.species[i].score / total_score;
-        };
+            console.log('species',this.species.map(specie => ({score: specie.score, fitness: specie.fitness})))
 
-        // Store new generation temporarily in this array
-        let new_generation = [];
+            // Store new generation temporarily in this array
+            let new_generation = [];
 
-        // Breeding
-        for (let i = 0; i < this.population; i++) {
-            let parentA = this.pickOne();
-            let parentB = this.pickOne();
-            let child = parentA.crossover(parentB);
-            child.mutate();
-            child.id = i;
-            child.params.id = i;
-            child.colors = [parentA.colors[0], parentB.colors[1]];
-            child.parents = [{ id: parentA.id, score: this.species[parentA.id].score }, { id: parentB.id, score: this.species[parentB.id].score }];
-            new_generation.push(child);
-        }
+            // Breeding
+            for (let i = 0; i < this.population; i++) {
+                let parentA = this.pickOne();
+                let parentB = this.pickOne();
+                let child = parentA.crossover(parentB);
+                child.mutate();
+                child.id = i;
+                child.params.id = i;
+                child.colors = [parentA.colors[0], parentB.colors[1]];
+                child.parents = [{ id: parentA.id, score: this.species[parentA.id].score }, { id: parentB.id, score: this.species[parentB.id].score }];
+                new_generation.push(child);
+            }
 
-        // Kill Current Generation.
-        // i.e. Remove their bodies from MatterJS World and dispose their brain
-        for (let i = 0; i < this.population; i++) {
-            this.species[i].kill(world);
-        }
-        
-        // Add new children to the current generation
-        this.species = new_generation;
-        for (let i = 0; i < this.population; i++) {
-            // this.species[i].add_to_world(world);
+            // Kill Current Generation.
+            // i.e. Remove their bodies from MatterJS World and dispose their brain
+            for (let i = 0; i < this.population; i++) {
+                this.species[i].kill();
+            }
+            this.species = new_generation;
+        } catch(e) {
+            console .log('evolve',e)
         }
     }
 }

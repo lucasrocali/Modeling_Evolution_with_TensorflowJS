@@ -6,6 +6,7 @@ class Trader {
 	constructor(params) {
 		this.id = params.id;
         this.lastOperation = 'neutral' //buy, sell
+        this.initalBalance = 100000
         this.balanceBRL = 100000
         this.balanceTicker = 0
         this.balanceTotal = 0
@@ -14,7 +15,7 @@ class Trader {
 		this.parents = [];
 		this.colors = [];
 		this.params = params;
-		this.brain = new NeuralNetwork(1, 100, 1);
+		this.brain = new NeuralNetwork(2, 40, 1);
 
 		this.init();
 	}
@@ -46,27 +47,31 @@ class Trader {
 	}
 
 	adjust_score() {
-		this.score = this.balanceTotal
+		this.score = this.balanceTotal > this.initalBalance ? this.balanceTotal - this.initalBalance : 0
 	}
 
-	think(counter,currentValue) {
+	think(counter, currentValue, currentMavgValue) {
         const spread = ((currentValue.close - currentValue.open) / currentValue.open)*100
+        const mavgSpread = ((currentValue.close - currentMavgValue) / currentMavgValue)*100
         const currentPrice = currentValue.close
 
-        let input = [spread];
+        let input = [spread, mavgSpread];
+        // this.id == 0 && console.log('input',input,spread,mavgSpread)
 
         let result = this.brain.predict(input);
         const currentDecision = result[0]
 
+        // console.log('currentDecision', currentDecision)
+
         const canBuy = this.balanceBRL - 100*currentPrice > 0
         const canSell = this.balanceTicker - 100 > 0
 
-        if (currentDecision < 0.4 && canBuy) {
+        if (currentDecision < 0.3 && canBuy) {
             this.lastOperation = 'buy'
             this.balanceBRL = this.balanceBRL - 100*currentPrice
             this.balanceTicker = this.balanceTicker + 100
 
-        } else if (currentDecision < 0.6 && canSell) {
+        } else if (currentDecision < 0.7 && canSell) {
             this.lastOperation = 'sell'
             this.balanceBRL = this.balanceBRL + 100*currentPrice
             this.balanceTicker = this.balanceTicker - 100
@@ -83,14 +88,11 @@ class Trader {
 		let params = Object.assign({}, this.params);
 		let new_trader = new Trader(params);
 		new_trader.brain.dispose();
-		new_trader.brain = this.brain.clone();
+        new_trader.brain = this.brain.clone();
 		return new_trader;
 	}
 
-	kill(world) {
-		// Matter.World.remove(world, [this.upper_right_leg, this.upper_left_leg, this.lower_left_leg, this.lower_right_leg,
-		// this.left_joint, this.right_joint, this.main_joint, this.main_muscle, this.left_muscle, this.right_muscle]);
-
+	kill() {
 		// Dispose its brain
 		this.brain.dispose();
 	}
